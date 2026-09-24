@@ -2,14 +2,12 @@ import { useState } from "react";
 import { createTicket } from "../services/ticketService.js";
 
 const CATEGORIES = ["FEES", "ATTENDANCE", "CERTIFICATES", "IT_SUPPORT"];
-const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 function validateForm(values) {
     const errors = {};
     if (!values.category) errors.category = "Category is required";
     if (!values.title.trim()) errors.title = "Title is required";
     if (!values.description.trim()) errors.description = "Description is required";
-    if (!values.priority) errors.priority = "Priority is required";
     return errors;
 }
 
@@ -17,7 +15,6 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
     const [category, setCategory] = useState("FEES");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [priority, setPriority] = useState("MEDIUM");
     const [fieldErrors, setFieldErrors] = useState({});
     const [submitError, setSubmitError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
@@ -31,7 +28,6 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
         setCategory("FEES");
         setTitle("");
         setDescription("");
-        setPriority("MEDIUM");
         setFieldErrors({});
         setSubmitError("");
         setSuccessMessage("");
@@ -48,7 +44,7 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
         setSubmitError("");
         setSuccessMessage("");
 
-        const errors = validateForm({ category, title, description, priority });
+        const errors = validateForm({ category, title, description });
         setFieldErrors(errors);
         if (Object.keys(errors).length > 0) {
             return;
@@ -60,7 +56,6 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                 category,
                 title: title.trim(),
                 description: description.trim(),
-                priority,
             });
             setSuccessMessage(`Ticket ${ticket.ticketId} created successfully.`);
             onCreated?.(ticket);
@@ -76,9 +71,9 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-                className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                className="modal-surface max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl p-6"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="raise-ticket-title"
@@ -89,14 +84,14 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             Raise New Ticket
                         </h2>
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                            Department and SLA are assigned automatically.
+                            Department, SLA, and default priority (MEDIUM) are assigned automatically.
                         </p>
                     </div>
                     <button
                         type="button"
                         onClick={handleClose}
                         disabled={isSubmitting}
-                        className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                        className="rounded-lg px-2 py-1 text-slate-500 hover:bg-black/5 hover:text-slate-800 dark:hover:bg-white/10 dark:hover:text-slate-200"
                         aria-label="Close"
                     >
                         ✕
@@ -110,7 +105,7 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             disabled={isSubmitting}
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+                            className="field-control w-full rounded-xl px-3 py-2"
                         >
                             {CATEGORIES.map((item) => (
                                 <option key={item} value={item}>
@@ -130,7 +125,7 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             disabled={isSubmitting}
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+                            className="field-control w-full rounded-xl px-3 py-2"
                             placeholder="Brief summary of your request"
                         />
                         {fieldErrors.title ? (
@@ -145,30 +140,11 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             onChange={(e) => setDescription(e.target.value)}
                             disabled={isSubmitting}
                             rows={4}
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+                            className="field-control w-full rounded-xl px-3 py-2"
                             placeholder="Provide details for the support team"
                         />
                         {fieldErrors.description ? (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors.description}</p>
-                        ) : null}
-                    </div>
-
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">Priority</label>
-                        <select
-                            value={priority}
-                            onChange={(e) => setPriority(e.target.value)}
-                            disabled={isSubmitting}
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            {PRIORITIES.map((item) => (
-                                <option key={item} value={item}>
-                                    {item}
-                                </option>
-                            ))}
-                        </select>
-                        {fieldErrors.priority ? (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.priority}</p>
                         ) : null}
                     </div>
 
@@ -177,6 +153,7 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             {submitError}
                         </p>
                     ) : null}
+
                     {successMessage ? (
                         <p className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200">
                             {successMessage}
@@ -188,14 +165,14 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                             type="button"
                             onClick={handleClose}
                             disabled={isSubmitting}
-                            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium dark:border-slate-600"
+                            className="rounded-xl border border-(--line) px-4 py-2 text-sm font-medium transition hover:bg-black/5 dark:hover:bg-white/10"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-70"
+                            className="primary-button rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-70"
                         >
                             {isSubmitting ? "Creating..." : "Create Ticket"}
                         </button>

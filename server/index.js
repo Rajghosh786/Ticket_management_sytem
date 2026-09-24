@@ -6,6 +6,8 @@ import cors from "cors";
 import { connectDB } from "./config/db.config.js";
 import authRouter from "./routes/auth.routes.js";
 import ticketRouter from "./routes/ticket.routes.js";
+import userRouter from "./routes/user.routes.js";
+import analyticsRouter from "./routes/analytics.routes.js";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -21,6 +23,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use("/api/tickets", ticketRouter);
+app.use("/api/users", userRouter);
+app.use("/api/analytics", analyticsRouter);
 
 app.use((err, _req, res, _next) => {
     if (err.type === "entity.parse.failed") {

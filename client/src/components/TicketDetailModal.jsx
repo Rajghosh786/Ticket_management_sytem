@@ -4,7 +4,12 @@ import SlaDisplay from "./SlaDisplay.jsx";
 import AgeingDisplay from "./AgeingDisplay.jsx";
 import AuditTimeline from "./AuditTimeline.jsx";
 import { formatDateTime } from "../utils/time.js";
-import { closeTicket, fetchTicketById, reopenTicket } from "../services/ticketService.js";
+import {
+    closeTicket,
+    fetchTicketById,
+    reopenTicket,
+    respondToPendingAction,
+} from "../services/ticketService.js";
 
 export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }) {
     const [ticket, setTicket] = useState(null);
@@ -16,6 +21,8 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
     const [reopenReason, setReopenReason] = useState("");
     const [isClosing, setIsClosing] = useState(false);
     const [isReopening, setIsReopening] = useState(false);
+    const [studentResponse, setStudentResponse] = useState("");
+    const [isResponding, setIsResponding] = useState(false);
 
     useEffect(() => {
         if (!open || !ticketId) {
@@ -30,6 +37,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
             setActionError("");
             setActionMessage("");
             setReopenReason("");
+            setStudentResponse("");
             try {
                 const data = await fetchTicketById(ticketId);
                 if (!cancelled) {
@@ -59,6 +67,31 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
     if (!open) {
         return null;
     }
+
+    const handleSubmitResponse = async () => {
+        setActionError("");
+        setActionMessage("");
+
+        if (!studentResponse.trim()) {
+            setActionError("Please enter your response.");
+            return;
+        }
+
+        setIsResponding(true);
+        try {
+            const updated = await respondToPendingAction(ticketId, studentResponse.trim());
+            setTicket(updated);
+            setStudentResponse("");
+            setActionMessage("Response submitted. The ticket is back in progress.");
+            onUpdated?.();
+            const data = await fetchTicketById(ticketId);
+            setAuditHistory(data.auditHistory || []);
+        } catch (err) {
+            setActionError(err.message || "Unable to submit response");
+        } finally {
+            setIsResponding(false);
+        }
+    };
 
     const handleCloseTicket = async () => {
         setActionError("");
@@ -104,9 +137,9 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
-                className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                className="modal-surface flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl"
                 role="dialog"
                 aria-modal="true"
             >
@@ -122,7 +155,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                        className="rounded-lg px-2 py-1 text-slate-500 hover:bg-black/5 hover:text-slate-800 dark:hover:bg-white/10 dark:hover:text-slate-200"
                         aria-label="Close"
                     >
                         ✕
@@ -184,6 +217,31 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                                 </div>
                             </dl>
 
+                            {ticket.status === "PENDING_STUDENT_ACTION" && ticket.staffQuery ? (
+                                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+                                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                                        Action required — waiting for your response
+                                    </p>
+                                    <p className="text-sm text-amber-800 dark:text-amber-100">{ticket.staffQuery}</p>
+                                    <textarea
+                                        value={studentResponse}
+                                        onChange={(e) => setStudentResponse(e.target.value)}
+                                        rows={3}
+                                        disabled={isResponding}
+                                        placeholder="Provide the information requested by staff"
+                                        className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm dark:border-amber-800 dark:bg-slate-900"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleSubmitResponse}
+                                        disabled={isResponding}
+                                        className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-70"
+                                    >
+                                        {isResponding ? "Submitting..." : "Submit Response"}
+                                    </button>
+                                </div>
+                            ) : null}
+
                             {ticket.resolutionNotes ? (
                                 <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30">
                                     <p className="text-sm font-semibold text-green-900 dark:text-green-200">
@@ -219,14 +277,14 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                                         onChange={(e) => setReopenReason(e.target.value)}
                                         rows={3}
                                         disabled={isReopening}
-                                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
+                                        className="field-control w-full rounded-xl px-3 py-2 text-sm"
                                         placeholder="Explain why you need to reopen this ticket"
                                     />
                                     <button
                                         type="button"
                                         onClick={handleReopenTicket}
                                         disabled={isReopening}
-                                        className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-70"
+                                        className="primary-button rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-70"
                                     >
                                         {isReopening ? "Reopening..." : "Reopen Ticket"}
                                     </button>

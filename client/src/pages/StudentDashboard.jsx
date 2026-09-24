@@ -10,7 +10,7 @@ import { fetchTickets } from "../services/ticketService.js";
 
 function SummaryCard({ label, value }) {
     return (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+        <div className="kpi-card">
             <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
             <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50">{value}</p>
         </div>
@@ -72,7 +72,7 @@ export default function StudentDashboard() {
                     <button
                         type="button"
                         onClick={() => setRaiseOpen(true)}
-                        className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="primary-button rounded-xl px-4 py-2.5 text-sm font-semibold"
                     >
                         + Raise Ticket
                     </button>
@@ -85,7 +85,7 @@ export default function StudentDashboard() {
                     <SummaryCard label="Closed" value={summary.closed} />
                 </section>
 
-                <section className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                <section className="table-shell">
                     <div className="border-b border-slate-200 px-5 py-4 dark:border-slate-700">
                         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">My Tickets</h2>
                     </div>

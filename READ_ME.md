@@ -17,7 +17,7 @@ The system provides separate workflows for Students, Staff, Department Admins, a
 * **SLA Pause** — SLA time pauses while waiting for information from the student.
 * **Ageing & SLA Visibility** — Tickets show active ageing, remaining SLA time, and breach status.
 * **Escalation** — Breached tickets are highlighted and surfaced to management.
-* **Assignment** — Department Admins and Admins can assign tickets to Staff.
+* **Assignment** — Department Admins assign tickets to department Staff (System Admin monitors assignments).
 * **Pending-Action Workflow** — Staff can request additional information from students.
 * **Resolution Tracking** — Resolved tickets require resolution notes.
 * **Student Confirmation** — Students can confirm a resolution or reopen a recently resolved ticket.
@@ -28,12 +28,12 @@ The system provides separate workflows for Students, Staff, Department Admins, a
 
 ## Ticket Categories & SLA
 
-| Category     | Department     |      SLA |
-| ------------ | -------------- | -------: |
-| IT_SUPPORT   | IT             | 12 hours |
-| ATTENDANCE   | Academic       | 24 hours |
-| FEES         | Finance        | 48 hours |
-| CERTIFICATES | Administration | 72 hours |
+| Category     | Department      |      SLA |
+| ------------ | --------------- | -------: |
+| FEES         | Accounts        | 48 hours |
+| ATTENDANCE   | Academic Office | 24 hours |
+| CERTIFICATES | Registrar       | 72 hours |
+| IT_SUPPORT   | IT Helpdesk     | 12 hours |
 
 These values are prototype business rules and can be configured later.
 
@@ -49,7 +49,7 @@ These values are prototype business rules and can be configured later.
 * View ticket activity
 * Review resolution
 * Confirm and close resolved tickets
-* Reopen a resolved ticket within 48 hours
+* Reopen a closed ticket within 48 hours of closure
 
 ### Staff
 
@@ -73,8 +73,7 @@ These values are prototype business rules and can be configured later.
 ### Admin
 
 * View tickets across all departments
-* Assign tickets to staff
-* Monitor global KPIs
+* Monitor global KPIs and SLA breaches
 * Monitor SLA breaches and ageing
 * View global activity history
 
@@ -180,12 +179,12 @@ The public registration flow creates **Student accounts only**.
 
 The following demo accounts are provided for assessment and demonstration:
 
-| Role                     | Email                          | Password     |
-| ------------------------ | ------------------------------ | ------------ |
-| Student                  | `student@TicketManager.com`       | `student123` |
-| Finance Staff            | `finance.staff@TicketManager.com` | `demo123`    |
-| Finance Department Admin | `finance.admin@TicketManager.com` | `demo123`    |
-| System Admin             | `admin@TicketManager.com`         | `admin123`   |
+| Role                     | Email                               | Password   |
+| ------------------------ | ----------------------------------- | ---------- |
+| Student                  | `student@ticketmanager.com`         | `Demo@123` |
+| Staff (Accounts)         | `staff@ticketmanager.com`           | `Demo@123` |
+| Department Admin         | `accounts.admin@ticketmanager.com`  | `Demo@123` |
+| System Admin             | `admin@ticketmanager.com`           | `Demo@123` |
 
 > Demo credentials are intended only for local assessment/demo usage.
 
@@ -198,8 +197,6 @@ The following demo accounts are provided for assessment and demonstration:
 * React
 * Vite
 * Tailwind CSS
-* Lucide React
-
 ### Backend
 
 * Node.js
@@ -239,8 +236,9 @@ Create `.env`:
 
 ```env
 PORT=5000
-MONGO_URI=<your-mongodb-uri>
+ATLAS_URI=<your-mongodb-uri>
 JWT_SECRET=<your-jwt-secret>
+CLIENT_URL=http://localhost:5173
 ```
 
 Start the backend:
@@ -291,7 +289,7 @@ For the quickest evaluation:
 
 * `flow.md` — System flow and business rules
 * `README.md` — Project overview and setup
-* `AI_USAGE.md` — Mandatory AI usage and validation report
+* `AI_USAGE.md` — Mandatory AI usage report
 
 ---
 

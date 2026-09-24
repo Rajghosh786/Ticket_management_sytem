@@ -107,6 +107,10 @@ const ticketSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        staffQuery: {
+            type: String,
+            default: "",
+        },
     },
     {
         timestamps: true,
