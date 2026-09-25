@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import AppShell from "../components/layout/AppShell.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import PriorityBadge from "../components/PriorityBadge.jsx";
+import StyledSelect from "../components/StyledSelect.jsx";
 import SlaDisplay from "../components/SlaDisplay.jsx";
 import AgeingDisplay from "../components/AgeingDisplay.jsx";
 import StaffTicketDetailModal from "../components/StaffTicketDetailModal.jsx";
@@ -12,6 +13,11 @@ import { formatDateTime } from "../utils/time.js";
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 const STATUSES = ["OPEN", "IN_PROGRESS", "PENDING_STUDENT_ACTION", "RESOLVED", "CLOSED", "REOPENED"];
 const CATEGORIES = ["FEES", "ATTENDANCE", "CERTIFICATES", "IT_SUPPORT"];
+const SLA_STATUS_OPTIONS = [
+    { value: "", label: "All" },
+    { value: "false", label: "Within SLA" },
+    { value: "true", label: "Breached" },
+];
 
 function KpiCard({ label, value, highlight }) {
     return (
@@ -47,7 +53,7 @@ export default function DepartmentAdminDashboard() {
     const [filterStatus, setFilterStatus] = useState("");
     const [filterCategory, setFilterCategory] = useState("");
     const [filterPriority, setFilterPriority] = useState("");
-    const [filterBreached, setFilterBreached] = useState("");
+    const [filterSlaStatus, setFilterSlaStatus] = useState("");
     const [filterAssignedTo, setFilterAssignedTo] = useState("");
     const [search, setSearch] = useState("");
 
@@ -71,7 +77,7 @@ export default function DepartmentAdminDashboard() {
             if (filterStatus) query.status = filterStatus;
             if (filterCategory) query.category = filterCategory;
             if (filterPriority) query.priority = filterPriority;
-            if (filterBreached === "true") query.breached = "true";
+            if (filterSlaStatus) query.breached = filterSlaStatus;
             if (filterAssignedTo) query.assignedTo = filterAssignedTo;
             if (search) query.search = search;
 
@@ -82,7 +88,7 @@ export default function DepartmentAdminDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [filterStatus, filterCategory, filterPriority, filterBreached, filterAssignedTo, search]);
+    }, [filterStatus, filterCategory, filterPriority, filterSlaStatus, filterAssignedTo, search]);
 
     useEffect(() => {
         loadKpis();
@@ -100,13 +106,13 @@ export default function DepartmentAdminDashboard() {
         setFilterStatus("");
         setFilterCategory("");
         setFilterPriority("");
-        setFilterBreached("");
+        setFilterSlaStatus("");
         setFilterAssignedTo("");
         setSearch("");
     }
 
     const hasFilters =
-        filterStatus || filterCategory || filterPriority || filterBreached || filterAssignedTo || search;
+        filterStatus || filterCategory || filterPriority || filterSlaStatus || filterAssignedTo || search;
 
     return (
         <AppShell activeNav="dashboard">
@@ -159,62 +165,45 @@ export default function DepartmentAdminDashboard() {
                             className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
                         />
 
-                        <select
+                        <StyledSelect
                             value={filterStatus}
                             onChange={handleFilterChange(setFilterStatus)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            <option value="">All statuses</option>
-                            {STATUSES.map((s) => (
-                                <option key={s} value={s}>
-                                    {s.replaceAll("_", " ")}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="All statuses"
+                            options={[{ value: "", label: "All statuses" }, ...STATUSES.map((s) => ({ value: s, label: s.replaceAll("_", " ") }))]}
+                            ariaLabel="Status"
+                        />
 
-                        <select
+                        <StyledSelect
                             value={filterCategory}
                             onChange={handleFilterChange(setFilterCategory)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            <option value="">All categories</option>
-                            {CATEGORIES.map((c) => (
-                                <option key={c} value={c}>
-                                    {c.replaceAll("_", " ")}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="All categories"
+                            options={[{ value: "", label: "All categories" }, ...CATEGORIES.map((c) => ({ value: c, label: c.replaceAll("_", " ") }))]}
+                            ariaLabel="Category"
+                        />
 
-                        <select
+                        <StyledSelect
                             value={filterPriority}
                             onChange={handleFilterChange(setFilterPriority)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            <option value="">All priorities</option>
-                            {PRIORITIES.map((p) => (
-                                <option key={p} value={p}>
-                                    {p}
-                                </option>
-                            ))}
-                        </select>
+                            placeholder="All priorities"
+                            options={[{ value: "", label: "All priorities" }, ...PRIORITIES]}
+                            ariaLabel="Priority"
+                        />
 
-                        <select
+                        <StyledSelect
                             value={filterAssignedTo}
                             onChange={handleFilterChange(setFilterAssignedTo)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            <option value="">All assignments</option>
-                            <option value="unassigned">Unassigned only</option>
-                        </select>
+                            placeholder="All assignments"
+                            options={[{ value: "", label: "All assignments" }, { value: "unassigned", label: "Unassigned only" }]}
+                            ariaLabel="Assignment"
+                        />
 
-                        <select
-                            value={filterBreached}
-                            onChange={handleFilterChange(setFilterBreached)}
-                            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-800"
-                        >
-                            <option value="">All tickets</option>
-                            <option value="true">Breached only</option>
-                        </select>
+                        <StyledSelect
+                            value={filterSlaStatus}
+                            onChange={handleFilterChange(setFilterSlaStatus)}
+                            placeholder="SLA Status"
+                            options={SLA_STATUS_OPTIONS}
+                            ariaLabel="SLA Status"
+                        />
 
                         {hasFilters ? (
                             <button

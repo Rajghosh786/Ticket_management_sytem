@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 import PriorityBadge from "./PriorityBadge.jsx";
+import StyledSelect from "./StyledSelect.jsx";
 import SlaDisplay from "./SlaDisplay.jsx";
 import AgeingDisplay from "./AgeingDisplay.jsx";
 import AuditTimeline from "./AuditTimeline.jsx";
@@ -426,19 +427,14 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
 
                                     {showAssignForm ? (
                                         <div className="mt-3 flex flex-wrap items-center gap-2">
-                                            <select
+                                            <StyledSelect
                                                 value={selectedStaffId}
                                                 onChange={(e) => setSelectedStaffId(e.target.value)}
                                                 disabled={busy}
-                                                className="min-w-50 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                                            >
-                                                <option value="">Select staff member</option>
-                                                {departmentStaff.map((member) => (
-                                                    <option key={member._id} value={member._id}>
-                                                        {member.name} — {member.department}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                placeholder="Select staff member"
+                                                options={[{ value: "", label: "Select staff member" }, ...departmentStaff.map((member) => ({ value: member._id, label: `${member.name} — ${member.department}` }))]}
+                                                ariaLabel="Staff member"
+                                            />
                                             <button
                                                 type="button"
                                                 onClick={handleAssignStaff}
@@ -452,19 +448,14 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
 
                                     {showPriorityForm ? (
                                         <div className="mt-3 flex items-center gap-2">
-                                            <select
+                                            <StyledSelect
                                                 value={newPriority}
                                                 onChange={(e) => setNewPriority(e.target.value)}
                                                 disabled={busy}
-                                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                                            >
-                                                <option value="">Select priority</option>
-                                                {PRIORITIES.map((p) => (
-                                                    <option key={p} value={p}>
-                                                        {p}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                placeholder="Select priority"
+                                                options={[{ value: "", label: "Select priority" }, ...PRIORITIES]}
+                                                ariaLabel="Priority"
+                                            />
                                             <button
                                                 type="button"
                                                 onClick={handleChangePriority}
@@ -611,19 +602,14 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
                                     {/* Priority form */}
                                     {showPriorityForm ? (
                                         <div className="mt-3 flex items-center gap-2">
-                                            <select
+                                            <StyledSelect
                                                 value={newPriority}
                                                 onChange={(e) => setNewPriority(e.target.value)}
                                                 disabled={busy}
-                                                className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800"
-                                            >
-                                                <option value="">Select priority</option>
-                                                {PRIORITIES.map((p) => (
-                                                    <option key={p} value={p}>
-                                                        {p}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                placeholder="Select priority"
+                                                options={[{ value: "", label: "Select priority" }, ...PRIORITIES]}
+                                                ariaLabel="Priority"
+                                            />
                                             <button
                                                 type="button"
                                                 onClick={handleChangePriority}

@@ -18,7 +18,7 @@ function validateLoginForm(email, password) {
     return errors;
 }
 
-export default function Login() {
+export default function Login({ onRegister }) {
     const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -58,7 +58,7 @@ export default function Login() {
 
             <div className="surface relative w-full max-w-md rounded-[28px] p-8 sm:p-10">
                 <div className="mb-8 text-center">
-                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-[var(--magenta-600)]">
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-(--magenta-600)">
                         TicketManager
                     </p>
                     <h1 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">
@@ -115,7 +115,7 @@ export default function Login() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword((current) => !current)}
-                                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-500 transition hover:text-[var(--magenta-600)] dark:text-slate-400"
+                                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-500 transition hover:text-(--magenta-600) dark:text-slate-400"
                                 aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -143,6 +143,10 @@ export default function Login() {
                         {isSubmitting ? "Signing in..." : "Login"}
                     </button>
                 </form>
+
+                <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
+                    New to TicketManager? <button type="button" onClick={onRegister} className="font-semibold text-(--magenta-600) hover:underline">Create Student Account</button>
+                </p>
             </div>
         </div>
     );

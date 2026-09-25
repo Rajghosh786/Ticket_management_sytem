@@ -353,7 +353,6 @@ Creates a Student account.
 
 ```json
 {
-  "name": "Rahul Sharma",
   "email": "rahul@example.com",
   "password": "password123",
   "rollNo": "STU001"
@@ -376,12 +375,7 @@ STAFF
 
 as the registration role.
 
-Returns:
-
-```text
-JWT
-User
-```
+Validation requires a valid email, a password, and a roll number. The password is hashed with bcrypt before storage. Duplicate emails return a conflict error. The server derives the required display name from the email local part because public registration does not collect a name. The response contains the safe created user; registration does not create a login session or JWT.
 
 ---
 
@@ -451,8 +445,7 @@ Creates a ticket.
 {
   "category": "FEES",
   "title": "Fee Refund Request",
-  "description": "I have been charged twice.",
-  "priority": "MEDIUM"
+  "description": "I have been charged twice."
 }
 ```
 
@@ -467,8 +460,9 @@ Creates a ticket.
 6. Calculate SLA deadline.
 7. Generate ticketId.
 8. Set status = OPEN.
-9. Save ticket.
-10. Create TICKET_CREATED audit record.
+9. Set priority = MEDIUM.
+10. Save ticket.
+11. Create TICKET_CREATED audit record.
 ```
 
 Example:
@@ -534,11 +528,15 @@ Supported query parameters:
 ?category=FEES
 ?priority=HIGH
 ?slaStatus=BREACHED
+?breached=false
+?breached=true
 ?assignedTo=<userId>
 ?search=refund
 ```
 
 Multiple filters may be combined.
+
+For SLA filtering, `breached=false` returns tickets whose server-owned `isBreached` state is false, and `breached=true` returns tickets whose `isBreached` state is true. The existing role query is applied before these filters, so Student, Staff, Department Admin, and Admin authorization scopes remain enforced.
 
 ---
 

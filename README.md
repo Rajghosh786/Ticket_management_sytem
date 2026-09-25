@@ -6,8 +6,10 @@ Student support and SLA lifecycle prototype for a college administrative helpdes
 
 - Role-based dashboards: **Student**, **Staff**, **Department Admin**, **System Admin**
 - Ticket creation with automatic **department** and **SLA** assignment
+- Student-only registration with email, password, confirm password, and roll number validation
 - Staff processing: priority changes, start work, request student action, resolve with notes
 - Department Admin: assign/reassign staff, change priority, department KPIs
+- Department Admin and System Admin: SLA Status filtering for all, within-SLA, or breached tickets
 - System Admin: institution-wide queue, global KPIs, breach visibility, audit history
 - HTTP-only cookie authentication, light/dark theme
 - Append-only audit timeline
@@ -53,7 +55,9 @@ OPEN → IN_PROGRESS → PENDING_STUDENT_ACTION → IN_PROGRESS → RESOLVED →
 
 Students confirm closure from **RESOLVED**. Reopen is from **CLOSED** within 48 hours (backend enforced).
 
-New student tickets start as **OPEN** with priority **MEDIUM** (students do not set priority).
+New student tickets start as **OPEN** with priority **MEDIUM** (students do not set priority). Staff and Department Admin can reprioritize tickets, and an SLA breach can escalate priority to **CRITICAL**.
+
+Public registration always creates a **STUDENT** account. Users cannot choose an administrative role.
 
 ## SLA policy (backend)
 

@@ -14,6 +14,20 @@ export async function loginWithCredentials(email, password) {
     return data.user;
 }
 
+export async function registerStudentAccount({ email, password, rollNo }) {
+    const { response, data } = await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ email, password, rollNo }),
+    });
+
+    if (!response.ok) {
+        const message = data?.message || "Unable to create student account";
+        throw new Error(message);
+    }
+
+    return data.user;
+}
+
 export async function fetchCurrentUser() {
     const { response, data } = await apiRequest("/api/auth/me", {
         method: "GET",

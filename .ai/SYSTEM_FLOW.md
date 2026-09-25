@@ -96,14 +96,30 @@ The system allows the institution to:
 Public registration creates only a `STUDENT` account.
 
 ```text
+STUDENT
+       │
+       ▼
 REGISTER
    │
-   ├── Name
-   ├── Email
-   └── Password
+       ├── Email
+       ├── Password
+       ├── Confirm Password
+       └── Roll No
    │
    ▼
-STUDENT ACCOUNT
+Backend Validation
+       │
+       ▼
+role = STUDENT
+       │
+       ▼
+Account Created
+       │
+       ▼
+Login
+       │
+       ▼
+Student Dashboard
 ```
 
 Staff, Department Admin, and Admin accounts are provisioned as administrative/demo accounts.
@@ -207,7 +223,6 @@ Raise Ticket
     ├── Category
     ├── Subject
     ├── Description
-    └── Priority
     │
     ▼
 System determines Department
@@ -455,18 +470,45 @@ AT_RISK
 BREACHED
 ```
 
-A ticket becoming overdue does **not** automatically change its business priority.
-
-Instead:
+A ticket becoming overdue updates its operational state and escalates its business priority:
 
 ```text
 SLA BREACH
     │
     ├── isBreached = true
+       ├── priority = CRITICAL
     ├── escalation visibility
     ├── highlighted in admin queue
     └── prioritized for management attention
 ```
+
+## Management SLA Status Filters
+
+Department Admin:
+
+```text
+Department Queue
+       │
+       ▼
+SLA Status
+       ├── All
+       ├── Within SLA (isBreached = false)
+       └── Breached (isBreached = true)
+```
+
+Admin:
+
+```text
+Global Ticket Queue
+       │
+       ▼
+SLA Status
+       ├── All
+       ├── Within SLA (isBreached = false)
+       └── Breached (isBreached = true)
+```
+
+Students do not select ticket priority when creating a ticket. New tickets start at `MEDIUM`; staff or Department Admin may reprioritize them, and a breach escalates the ticket to `CRITICAL`.
 
 ---
 

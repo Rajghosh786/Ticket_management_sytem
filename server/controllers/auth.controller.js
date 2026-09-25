@@ -42,6 +42,49 @@ export async function login(req, res) {
     }
 }
 
+export async function registerStudent(req, res) {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+        const password = String(req.body.password || "");
+        const rollNo = String(req.body.rollNo || "").trim();
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ message: "A valid email is required" });
+        }
+
+        if (!password) {
+            return res.status(400).json({ message: "Password is required" });
+        }
+
+        if (!rollNo) {
+            return res.status(400).json({ message: "Roll number is required" });
+        }
+
+        const existingUser = await User.findOne({ email }).select("_id");
+        if (existingUser) {
+            return res.status(409).json({ message: "An account with this email already exists" });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+        const displayName = email.split("@")[0];
+        const user = await User.create({
+            name: displayName,
+            email,
+            password: passwordHash,
+            rollNo,
+            role: "STUDENT",
+        });
+
+        return res.status(201).json({ user: toSafeUser(user) });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: "An account with this email already exists" });
+        }
+        console.error("Student registration error:", error);
+        return res.status(500).json({ message: "Unable to create student account" });
+    }
+}
+
 export async function getCurrentUser(req, res) {
     try {
         const token = getAuthTokenFromRequest(req);

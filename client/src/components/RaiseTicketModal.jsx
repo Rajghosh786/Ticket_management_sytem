@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createTicket } from "../services/ticketService.js";
+import StyledSelect from "./StyledSelect.jsx";
 
 const CATEGORIES = ["FEES", "ATTENDANCE", "CERTIFICATES", "IT_SUPPORT"];
 
@@ -101,18 +102,13 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div>
                         <label className="mb-1 block text-sm font-medium">Category</label>
-                        <select
+                        <StyledSelect
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                             disabled={isSubmitting}
-                            className="field-control w-full rounded-xl px-3 py-2"
-                        >
-                            {CATEGORIES.map((item) => (
-                                <option key={item} value={item}>
-                                    {item.replaceAll("_", " ")}
-                                </option>
-                            ))}
-                        </select>
+                            options={CATEGORIES.map((item) => ({ value: item, label: item.replaceAll("_", " ") }))}
+                            ariaLabel="Category"
+                        />
                         {fieldErrors.category ? (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors.category}</p>
                         ) : null}

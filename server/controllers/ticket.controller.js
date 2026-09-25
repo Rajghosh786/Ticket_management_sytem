@@ -228,6 +228,8 @@ export async function getTickets(req, res) {
             enrichedTickets = enrichedTickets.filter(
                 (ticket) => ticket.isBreached || ticket.slaStatus === "BREACHED"
             );
+        } else if (req.query.breached === "false") {
+            enrichedTickets = enrichedTickets.filter((ticket) => !ticket.isBreached);
         }
 
         if (req.user.role === "STUDENT") {

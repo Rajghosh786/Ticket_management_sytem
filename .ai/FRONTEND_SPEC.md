@@ -67,10 +67,10 @@ Password
 Fields:
 
 ```text
-Name
 Email
 Password
 Confirm Password
+Roll No
 [Create Student Account]
 ```
 
@@ -81,6 +81,8 @@ role = STUDENT
 ```
 
 Users cannot select ADMIN, DEPARTMENT_ADMIN, or STAFF during public registration.
+
+Registration is student-only. The page validates email, required passwords, matching passwords, and roll number; both password fields have visibility toggles. Successful registration returns the user to the Login page. Login and Register share the same light/dark theme, glass card, field, button, and background treatment.
 
 ---
 
@@ -173,7 +175,6 @@ Form:
 
 ```text
 Category
-Priority
 Subject
 Description
 
@@ -195,6 +196,7 @@ The backend determines:
 Department
 SLA
 Initial status
+Priority = MEDIUM
 ```
 
 The frontend should not be the authority for these values.
@@ -464,6 +466,10 @@ SLA Status
 Assigned Staff
 Search
 ```
+
+Department Admin and Admin use one shared `SLA Status` filter with `All`, `Within SLA`, and `Breached` options. `Within SLA` uses server state `isBreached = false`; `Breached` uses `isBreached = true`.
+
+All application dropdowns use the reusable styled dropdown component. It supports click selection, outside-click closing, keyboard navigation, selected state, disabled state, and light/dark themed menus above table content and cards.
 
 Columns:
 
