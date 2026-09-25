@@ -30,7 +30,9 @@ export function buildAuthCookie(token, maxAgeSeconds) {
         `${AUTH_COOKIE_NAME}=${encodeURIComponent(token)}`,
         "HttpOnly",
         "Path=/",
-        "SameSite=Lax",
+        process.env.NODE_ENV === "production"
+        ? "SameSite=None"
+        : "SameSite=Lax",
         `Max-Age=${maxAgeSeconds}`,
     ];
 
@@ -46,7 +48,9 @@ export function buildClearAuthCookie() {
         `${AUTH_COOKIE_NAME}=`,
         "HttpOnly",
         "Path=/",
-        "SameSite=Lax",
+        process.env.NODE_ENV === "production"
+        ? "SameSite=None"
+        : "SameSite=Lax",
         "Max-Age=0",
     ];
 
