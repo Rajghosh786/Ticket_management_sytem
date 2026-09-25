@@ -1,7 +1,14 @@
 import { formatDateTime } from "../utils/time.js";
 
 function formatActionLabel(action) {
-    return action.replaceAll("_", " ");
+    const labels = {
+        DOCUMENT_REQUESTED: "Document requested",
+        DOCUMENT_UPLOADED: "Document uploaded",
+        DOCUMENT_ACCEPTED: "Document accepted",
+        DOCUMENT_REJECTED: "Document rejected",
+        DOCUMENT_REQUEST_CANCELLED: "Document request cancelled",
+    };
+    return labels[action] || action.replaceAll("_", " ");
 }
 
 export default function AuditTimeline({ auditHistory = [] }) {

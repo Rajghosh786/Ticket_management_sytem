@@ -237,6 +237,13 @@ status = OPEN
 Create AuditLog
     │
     └── TICKET_CREATED
+    │
+    Optional supporting document
+    │
+    ├── PDF / JPG / JPEG / PNG
+    ├── Max 2 MB
+    ├── Upload to Cloudinary
+    └── DOCUMENT_UPLOADED audit
 ```
 
 Example:
@@ -364,6 +371,81 @@ totalPausedDuration
 ```
 
 The effective SLA deadline accounts for the accumulated paused duration.
+
+---
+
+# 11a. Document Request Flow
+
+Staff, Department Admin, and Admin can request a named document from the student on an authorized ticket.
+
+```text
+Student
+  │
+  ▼
+Create Ticket
+  │
+  ├── Optional Attachment
+  ▼
+Ticket Created (OPEN, priority MEDIUM)
+
+Staff / Department Admin / Admin
+  │
+  ▼
+Request Document
+  │
+  ├── Document name
+  ├── Message
+  ▼
+PENDING_STUDENT_ACTION
+  │
+  ▼
+SLA Paused
+  │
+  ▼
+Student Uploads
+  │
+  ▼
+SUBMITTED
+  │
+  ▼
+SLA Resumes (only if no other request is still waiting)
+  │
+  ▼
+Staff Reviews
+  │
+  ├──────────────┐
+  ▼              ▼
+ACCEPTED      REJECTED
+                 │
+                 ├── Reason (required)
+                 ▼
+              Student Uploads Again
+                 │
+                 ▼
+              SUBMITTED
+```
+
+A ticket may have multiple document requests at once, for example:
+
+```text
+Fee Receipt → ACCEPTED
+ID Proof → PENDING
+Bank Statement → ACCEPTED
+```
+
+The ticket remains `PENDING_STUDENT_ACTION` while any request is `PENDING` or `REJECTED` (waiting for the student). Time spent waiting for the student is not counted against SLA.
+
+Document events are recorded in the existing AuditLog:
+
+```text
+DOCUMENT_REQUESTED
+DOCUMENT_UPLOADED
+DOCUMENT_ACCEPTED
+DOCUMENT_REJECTED
+DOCUMENT_REQUEST_CANCELLED
+```
+
+Previous submissions stay in request history. A rejection does not delete earlier uploads.
 
 ---
 
@@ -617,9 +699,30 @@ RESOLUTION_ADDED
 TICKET_RESOLVED
 TICKET_CLOSED
 TICKET_REOPENED
+DOCUMENT_REQUESTED
+DOCUMENT_UPLOADED
+DOCUMENT_ACCEPTED
+DOCUMENT_REJECTED
+DOCUMENT_REQUEST_CANCELLED
 ```
 
 Audit records are append-only and are not edited as part of normal ticket operations.
+
+## Document workflow
+
+```text
+Student
+       ↓ Create Ticket + optional PDF/JPG/JPEG/PNG attachment (max 2 MB)
+OPEN
+       ↓ Staff / Department Admin / Admin requests one or more named documents
+PENDING_STUDENT_ACTION + SLA paused
+       ↓ Student uploads requested document
+SUBMITTED + SLA resumes only when no request remains pending
+       ↓ Staff / Department Admin / Admin reviews
+ACCEPTED
+```
+
+If a submission is rejected, the backend records the reason and keeps the prior submission in history. The student uploads again and the request returns to `SUBMITTED`. Document events use the existing immutable audit timeline.
 
 ---
 
@@ -638,6 +741,9 @@ Audit records are append-only and are not edited as part of normal ticket operat
 │ Resolve Ticket      │         │   ✓   │      ✓       │   ✓   │
 │ Confirm & Close     │   ✓     │       │              │       │
 │ Reopen Ticket       │   ✓     │       │              │       │
+│ Request Document    │         │   ✓   │      ✓       │   ✓   │
+│ Upload Document     │   ✓     │       │              │       │
+│ Accept / Reject Doc │         │   ✓   │      ✓       │   ✓   │
 │ Dept KPIs           │         │       │      ✓       │   ✓   │
 │ Global KPIs         │         │       │              │   ✓   │
 │ Global Tickets      │         │       │              │   ✓   │
@@ -848,6 +954,8 @@ Student confirmation
 Reopen
 Audit history
 Management dashboard
+Document attachments
+Document requests
 ```
 
 ### Not included in the prototype
@@ -856,7 +964,6 @@ Management dashboard
 Real-time chat
 Email notifications
 SMS notifications
-File storage
 Complex approval chains
 External ERP integration
 Advanced analytics

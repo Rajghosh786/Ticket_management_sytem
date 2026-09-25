@@ -3,6 +3,8 @@ import { createTicket } from "../services/ticketService.js";
 import StyledSelect from "./StyledSelect.jsx";
 
 const CATEGORIES = ["FEES", "ATTENDANCE", "CERTIFICATES", "IT_SUPPORT"];
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
 function validateForm(values) {
     const errors = {};
@@ -20,6 +22,7 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
     const [submitError, setSubmitError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [attachment, setAttachment] = useState(null);
 
     if (!open) {
         return null;
@@ -32,7 +35,30 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
         setFieldErrors({});
         setSubmitError("");
         setSuccessMessage("");
+        setAttachment(null);
     };
+
+    const handleFileChange = (event) => {
+        const file = event.target.files?.[0];
+        setFieldErrors((current) => ({ ...current, attachment: "" }));
+        if (!file) {
+            setAttachment(null);
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            setFieldErrors((current) => ({ ...current, attachment: "File must be 2 MB or smaller." }));
+            event.target.value = "";
+            return;
+        }
+        if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+            setFieldErrors((current) => ({ ...current, attachment: "Only PDF, JPG, JPEG, and PNG files are allowed." }));
+            event.target.value = "";
+            return;
+        }
+        setAttachment(file);
+    };
+
+    const formatFileSize = (size) => `${(size / (1024 * 1024)).toFixed(1)} MB`;
 
     const handleClose = () => {
         if (isSubmitting) return;
@@ -53,11 +79,12 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
 
         setIsSubmitting(true);
         try {
-            const ticket = await createTicket({
-                category,
-                title: title.trim(),
-                description: description.trim(),
-            });
+            const payload = new FormData();
+            payload.append("category", category);
+            payload.append("title", title.trim());
+            payload.append("description", description.trim());
+            if (attachment) payload.append("attachment", attachment);
+            const ticket = await createTicket(payload);
             setSuccessMessage(`Ticket ${ticket.ticketId} created successfully.`);
             onCreated?.(ticket);
             setTimeout(() => {
@@ -87,6 +114,22 @@ export default function RaiseTicketModal({ open, onClose, onCreated }) {
                         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                             Department, SLA, and default priority (MEDIUM) are assigned automatically.
                         </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-dashed border-(--line) bg-black/2 p-4 dark:bg-white/3">
+                        <p className="text-sm font-semibold">Supporting Document <span className="font-normal text-slate-500">(optional)</span></p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Upload a PDF, JPG, JPEG, or PNG up to 2 MB.</p>
+                        <label className="mt-3 inline-flex cursor-pointer items-center rounded-xl border border-(--line) px-3 py-2 text-sm font-semibold transition hover:bg-black/5 dark:hover:bg-white/10">
+                            Choose File
+                            <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={handleFileChange} disabled={isSubmitting} className="sr-only" />
+                        </label>
+                        {attachment ? (
+                            <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-(--line) px-3 py-2 text-sm">
+                                <span className="min-w-0 truncate">📄 {attachment.name} <span className="text-slate-500">{formatFileSize(attachment.size)}</span></span>
+                                <button type="button" onClick={() => setAttachment(null)} disabled={isSubmitting} className="shrink-0 font-semibold text-(--magenta-600)">Remove</button>
+                            </div>
+                        ) : null}
+                        {fieldErrors.attachment ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{fieldErrors.attachment}</p> : null}
                     </div>
                     <button
                         type="button"

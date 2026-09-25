@@ -6,6 +6,7 @@ import StyledSelect from "./StyledSelect.jsx";
 import SlaDisplay from "./SlaDisplay.jsx";
 import AgeingDisplay from "./AgeingDisplay.jsx";
 import AuditTimeline from "./AuditTimeline.jsx";
+import DocumentWorkflow from "./DocumentWorkflow.jsx";
 import { formatDateTime } from "../utils/time.js";
 import {
     assignTicket,
@@ -22,6 +23,8 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
     const { user } = useAuth();
     const [ticket, setTicket] = useState(null);
     const [auditHistory, setAuditHistory] = useState([]);
+    const [attachments, setAttachments] = useState([]);
+    const [documentRequests, setDocumentRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -54,6 +57,8 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
         try {
             const data = await fetchTicketById(ticketId);
             setTicket(data.ticket);
+            setAttachments(data.attachments || []);
+            setDocumentRequests(data.documentRequests || []);
             setAuditHistory(data.auditHistory || []);
         } catch (err) {
             setError(err.message || "Unable to load ticket");
@@ -61,6 +66,15 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
         } finally {
             setLoading(false);
         }
+    }
+
+    async function refreshTicket() {
+        const data = await fetchTicketById(ticketId);
+        setTicket(data.ticket);
+        setAttachments(data.attachments || []);
+        setDocumentRequests(data.documentRequests || []);
+        setAuditHistory(data.auditHistory || []);
+        onUpdated?.();
     }
 
     useEffect(() => {
@@ -100,8 +114,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setTicket(updated);
             setActionMessage("Ticket assigned to you successfully.");
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to take ticket");
         } finally {
@@ -118,8 +131,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setTicket(updated);
             setActionMessage("Ticket is now In Progress.");
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to update status");
         } finally {
@@ -145,8 +157,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setStaffQuery("");
             setShowQueryForm(false);
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to request student action");
         } finally {
@@ -172,8 +183,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setResolutionNotes("");
             setShowResolveForm(false);
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to resolve ticket");
         } finally {
@@ -196,8 +206,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setSelectedStaffId("");
             setShowAssignForm(false);
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to assign ticket");
         } finally {
@@ -220,8 +229,7 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
             setNewPriority("");
             setShowPriorityForm(false);
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to change priority");
         } finally {
@@ -630,6 +638,14 @@ export default function StaffTicketDetailModal({ ticketId, open, onClose, onUpda
                             {actionMessage ? (
                                 <p className="text-sm text-green-700 dark:text-green-300">{actionMessage}</p>
                             ) : null}
+
+                            <DocumentWorkflow
+                                ticketId={ticketId}
+                                attachments={attachments}
+                                documentRequests={documentRequests}
+                                isStaffView
+                                onRefresh={refreshTicket}
+                            />
 
                             {/* Audit timeline */}
                             <div>

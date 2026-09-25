@@ -40,9 +40,10 @@ export async function fetchTicketById(ticketId) {
 }
 
 export async function createTicket(payload) {
+    const body = payload instanceof FormData ? payload : JSON.stringify(payload);
     const { response, data } = await apiRequest("/api/tickets", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body,
     });
 
     if (!response.ok) {
@@ -50,6 +51,63 @@ export async function createTicket(payload) {
     }
 
     return data.ticket;
+}
+
+export async function uploadTicketAttachment(ticketId, file) {
+    const formData = new FormData();
+    formData.append("attachment", file);
+    const { response, data } = await apiRequest(`/api/tickets/${ticketId}/attachments`, {
+        method: "POST",
+        body: formData,
+    });
+    if (!response.ok) await parseApiError(response, data, "Unable to upload attachment");
+    return data;
+}
+
+export async function createDocumentRequest(ticketId, documentName, message) {
+    const { response, data } = await apiRequest(`/api/tickets/${ticketId}/document-requests`, {
+        method: "POST",
+        body: JSON.stringify({ documentName, message }),
+    });
+    if (!response.ok) await parseApiError(response, data, "Unable to request document");
+    return data;
+}
+
+export async function submitDocumentRequest(ticketId, requestId, file) {
+    const formData = new FormData();
+    formData.append("attachment", file);
+    const { response, data } = await apiRequest(
+        `/api/tickets/${ticketId}/document-requests/${requestId}/submit`,
+        { method: "POST", body: formData }
+    );
+    if (!response.ok) await parseApiError(response, data, "Unable to submit document");
+    return data;
+}
+
+export async function acceptDocumentRequest(ticketId, requestId) {
+    const { response, data } = await apiRequest(
+        `/api/tickets/${ticketId}/document-requests/${requestId}/accept`,
+        { method: "PATCH" }
+    );
+    if (!response.ok) await parseApiError(response, data, "Unable to accept document");
+    return data;
+}
+
+export async function rejectDocumentRequest(ticketId, requestId, reason) {
+    const { response, data } = await apiRequest(
+        `/api/tickets/${ticketId}/document-requests/${requestId}/reject`,
+        { method: "PATCH", body: JSON.stringify({ reason }) }
+    );
+    if (!response.ok) await parseApiError(response, data, "Unable to reject document");
+    return data;
+}
+
+export async function getAttachmentAccess(ticketId, attachmentId) {
+    const { response, data } = await apiRequest(`/api/tickets/${ticketId}/attachments/${attachmentId}`, {
+        method: "GET",
+    });
+    if (!response.ok) await parseApiError(response, data, "Unable to access document");
+    return data;
 }
 
 export async function closeTicket(ticketId) {

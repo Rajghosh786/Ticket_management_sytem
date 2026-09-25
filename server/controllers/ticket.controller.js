@@ -3,7 +3,13 @@ import { SLA_POLICY, TICKET_CATEGORIES, TICKET_PRIORITIES } from "../constants/s
 import { Ticket } from "../models/Ticket.js";
 import { User } from "../models/User.js";
 import { createAuditLog, getAuditLogsForTicket } from "../services/audit.service.js";
-import { enrichTicketTiming } from "../services/sla.service.js";
+import { formatAttachment, saveUploadedAttachment } from "../services/attachment.service.js";
+import {
+    getTicketAttachments,
+    getTicketDocumentRequests,
+    ticketHasWaitingDocumentRequests,
+} from "../controllers/document.controller.js";
+import { enrichTicketTiming, pauseTicketSla, resumeTicketSla } from "../services/sla.service.js";
 import {
     processSlaBreachForTicketId,
     processSlaBreachesForQuery,
@@ -190,8 +196,42 @@ export async function createTicket(req, res) {
             details: `Ticket ${ticket.ticketId} created`,
         });
 
+        let attachment = null;
+
+        if (req.file) {
+            try {
+                attachment = await saveUploadedAttachment({
+                    file: req.file,
+                    ticket,
+                    user: req.user,
+                });
+
+                await createAuditLog({
+                    ticketId: ticket._id,
+                    action: "DOCUMENT_UPLOADED",
+                    performedBy: req.user._id,
+                    fromStatus: "OPEN",
+                    toStatus: "OPEN",
+                    details: `${req.user.name} uploaded ${attachment.originalName}.`,
+                });
+            } catch (uploadError) {
+                console.error("Create ticket attachment error:", uploadError);
+                const message =
+                    uploadError?.message === "Cloudinary is not configured"
+                        ? "File upload is not configured"
+                        : "Unable to upload file to Cloudinary";
+                return res.status(502).json({
+                    message,
+                    ticket: enrichTicketTiming(ticket),
+                });
+            }
+        }
+
         const enriched = enrichTicketTiming(ticket);
-        return res.status(201).json({ ticket: enriched });
+        return res.status(201).json({
+            ticket: enriched,
+            ...(attachment ? { attachment: formatAttachment(attachment) } : {}),
+        });
     } catch (error) {
         console.error("Create ticket error:", error);
         return res.status(500).json({ message: "Unable to create ticket" });
@@ -271,10 +311,16 @@ export async function getTicketById(req, res) {
         }
 
         const auditHistory = await getAuditLogsForTicket(ticket._id);
+        const [attachments, documentRequests] = await Promise.all([
+            getTicketAttachments(ticket._id),
+            getTicketDocumentRequests(ticket._id),
+        ]);
         const enriched = enrichTicketTiming(ticket);
 
         return res.status(200).json({
             ticket: enriched,
+            attachments,
+            documentRequests,
             auditHistory: formatAuditLogs(auditHistory),
         });
     } catch (error) {
@@ -423,13 +469,15 @@ export async function respondToPendingAction(req, res) {
         }
 
         const fromStatus = ticket.status;
+        const waitingForDocument = await ticketHasWaitingDocumentRequests(ticket._id);
 
-        if (ticket.slaPausedAt) {
-            const pausedDuration = Date.now() - new Date(ticket.slaPausedAt).getTime();
-            ticket.totalPausedDuration = (ticket.totalPausedDuration || 0) + pausedDuration;
-            ticket.slaPausedAt = null;
+        if (waitingForDocument) {
+            return res.status(400).json({
+                message: "Please upload the requested document before submitting your response",
+            });
         }
 
+        resumeTicketSla(ticket);
         ticket.status = "IN_PROGRESS";
         await ticket.save();
 

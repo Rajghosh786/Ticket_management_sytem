@@ -1,5 +1,24 @@
 const ACTIVE_SLA_STATUSES = new Set(["OPEN", "IN_PROGRESS", "REOPENED", "PENDING_STUDENT_ACTION"]);
 
+export function pauseTicketSla(ticket, now = new Date()) {
+    if (!ticket.slaPausedAt) {
+        ticket.slaPausedAt = now;
+    }
+
+    return ticket;
+}
+
+export function resumeTicketSla(ticket, now = Date.now()) {
+    if (!ticket.slaPausedAt) {
+        return ticket;
+    }
+
+    const pausedDuration = now - new Date(ticket.slaPausedAt).getTime();
+    ticket.totalPausedDuration = (ticket.totalPausedDuration || 0) + pausedDuration;
+    ticket.slaPausedAt = null;
+    return ticket;
+}
+
 export function getEffectiveSlaDeadlineMs(ticket) {
     return new Date(ticket.slaDeadline).getTime() + (ticket.totalPausedDuration || 0);
 }

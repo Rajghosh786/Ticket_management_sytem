@@ -770,3 +770,11 @@ AI ticket classification
 ```
 
 The complete ticket lifecycle is more important than additional features.
+
+## Document and attachment UI
+
+Ticket creation supports an optional themed attachment area. The client validates PDF, JPG, JPEG, and PNG files up to 2 MB, then submits the ticket and file as `FormData`; the backend remains the validation and authorization boundary.
+
+Student ticket details show attachments and all document requests. Students can upload a pending or rejected request, see filename and size, receive loading/error/success feedback, and retain previous submission history. Staff, Department Admin, and Admin ticket details show request, view, accept, and reject actions according to the existing role UX. Rejection requires a reason.
+
+File View actions obtain an authorized signed URL from the backend; the frontend never constructs Cloudinary URLs. Document events render in the existing `AuditTimeline`. When the ticket is `PENDING_STUDENT_ACTION`, `SlaDisplay` shows that the SLA is paused and otherwise renders server-provided timing. All document surfaces use the existing light/dark theme and responsive card styles.

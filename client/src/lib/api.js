@@ -10,13 +10,15 @@ function getApiBaseUrl() {
 export async function apiRequest(path, options = {}) {
     const url = `${getApiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 
+    const headers = { ...(options.headers || {}) };
+    if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+    }
+
     const response = await fetch(url, {
         ...options,
         credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {}),
-        },
+        headers,
     });
 
     let data = null;

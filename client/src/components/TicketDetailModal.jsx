@@ -3,6 +3,7 @@ import StatusBadge from "./StatusBadge.jsx";
 import SlaDisplay from "./SlaDisplay.jsx";
 import AgeingDisplay from "./AgeingDisplay.jsx";
 import AuditTimeline from "./AuditTimeline.jsx";
+import DocumentWorkflow from "./DocumentWorkflow.jsx";
 import { formatDateTime } from "../utils/time.js";
 import {
     closeTicket,
@@ -14,6 +15,8 @@ import {
 export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }) {
     const [ticket, setTicket] = useState(null);
     const [auditHistory, setAuditHistory] = useState([]);
+    const [attachments, setAttachments] = useState([]);
+    const [documentRequests, setDocumentRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [actionError, setActionError] = useState("");
@@ -23,6 +26,10 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
     const [isReopening, setIsReopening] = useState(false);
     const [studentResponse, setStudentResponse] = useState("");
     const [isResponding, setIsResponding] = useState(false);
+
+    const hasPendingDocumentRequest = documentRequests.some((request) =>
+        ["PENDING", "REJECTED"].includes(request.status)
+    );
 
     useEffect(() => {
         if (!open || !ticketId) {
@@ -42,6 +49,8 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                 const data = await fetchTicketById(ticketId);
                 if (!cancelled) {
                     setTicket(data.ticket);
+                    setAttachments(data.attachments || []);
+                    setDocumentRequests(data.documentRequests || []);
                     setAuditHistory(data.auditHistory || []);
                 }
             } catch (err) {
@@ -49,6 +58,8 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                     setError(err.message || "Unable to load ticket");
                     setTicket(null);
                     setAuditHistory([]);
+                    setAttachments([]);
+                    setDocumentRequests([]);
                 }
             } finally {
                 if (!cancelled) {
@@ -64,6 +75,15 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
         };
     }, [open, ticketId]);
 
+    const refreshTicket = async () => {
+        const data = await fetchTicketById(ticketId);
+        setTicket(data.ticket);
+        setAttachments(data.attachments || []);
+        setDocumentRequests(data.documentRequests || []);
+        setAuditHistory(data.auditHistory || []);
+        onUpdated?.();
+    };
+
     if (!open) {
         return null;
     }
@@ -71,6 +91,11 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
     const handleSubmitResponse = async () => {
         setActionError("");
         setActionMessage("");
+
+        if (hasPendingDocumentRequest) {
+            setActionError("Please upload the requested document before submitting your response.");
+            return;
+        }
 
         if (!studentResponse.trim()) {
             setActionError("Please enter your response.");
@@ -84,8 +109,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
             setStudentResponse("");
             setActionMessage("Response submitted. The ticket is back in progress.");
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to submit response");
         } finally {
@@ -102,8 +126,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
             setTicket(updated);
             setActionMessage("Ticket closed successfully.");
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to close ticket");
         } finally {
@@ -127,8 +150,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
             setActionMessage("Ticket reopened successfully.");
             setReopenReason("");
             onUpdated?.();
-            const data = await fetchTicketById(ticketId);
-            setAuditHistory(data.auditHistory || []);
+            await refreshTicket();
         } catch (err) {
             setActionError(err.message || "Unable to reopen ticket");
         } finally {
@@ -217,8 +239,16 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                                 </div>
                             </dl>
 
+                            <DocumentWorkflow
+                                ticketId={ticketId}
+                                attachments={attachments}
+                                documentRequests={documentRequests}
+                                validationMessage={hasPendingDocumentRequest ? actionError : ""}
+                                onRefresh={refreshTicket}
+                            />
+
                             {ticket.status === "PENDING_STUDENT_ACTION" && ticket.staffQuery ? (
-                                <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
+                                <div className="mt-0 space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/30">
                                     <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
                                         Action required — waiting for your response
                                     </p>
@@ -291,7 +321,7 @@ export default function TicketDetailModal({ ticketId, open, onClose, onUpdated }
                                 </div>
                             ) : null}
 
-                            {actionError ? (
+                            {actionError && !hasPendingDocumentRequest ? (
                                 <p className="text-sm text-red-600 dark:text-red-400">{actionError}</p>
                             ) : null}
                             {actionMessage ? (

@@ -329,6 +329,11 @@ TICKET_CLOSED
 TICKET_REOPENED
 PRIORITY_CHANGED
 SLA_BREACHED
+DOCUMENT_REQUESTED
+DOCUMENT_UPLOADED
+DOCUMENT_ACCEPTED
+DOCUMENT_REJECTED
+DOCUMENT_REQUEST_CANCELLED
 ```
 
 Audit records are append-only.
@@ -894,6 +899,12 @@ A breached `LOW` priority ticket remains `LOW` priority.
 
 The breach instead triggers management visibility and escalation.
 
+## Document and attachment API
+
+Student ticket creation accepts multipart field `attachment` on `POST /api/tickets`. The backend validates and stores optional PDF, JPG, JPEG, or PNG files up to 2 MB in Cloudinary and stores metadata in `Attachment`. Students can submit multipart `attachment` files to `POST /api/tickets/:id/document-requests/:requestId/submit`.
+
+Staff, Department Admin, and Admin use `POST /api/tickets/:id/document-requests` with `documentName` and `message`, then `PATCH` the request with `/accept` or `/reject` (the rejection body requires `reason`). Authorized users obtain temporary access through `GET /api/tickets/:id/attachments/:attachmentId`; Cloudinary credentials remain server-only. `GET /api/tickets/:id` returns attachments, document requests with submission history, and the same audit history used by the frontend.
+
 ---
 
 # 26. Breach Detection
@@ -1138,3 +1149,161 @@ Implementation priority:
 ```
 
 Secondary features should only be implemented after the complete core lifecycle is working.
+
+---
+
+# 35. Document Attachments and Document Requests
+
+Ticket files are not stored as binary data in MongoDB.
+
+## Multer
+
+Multipart uploads use Multer with memory storage (no permanent local files).
+
+```text
+Maximum size: 2 MB
+Allowed types: PDF, JPG, JPEG, PNG
+Validation: file size, MIME type, file extension
+Multipart field names: file or attachment
+```
+
+## Cloudinary
+
+Uploads go to Cloudinary using:
+
+```text
+CLOUDINARY_CLOUD_NAME
+CLOUDINARY_API_KEY
+CLOUDINARY_API_SECRET
+```
+
+`CLOUDINARY_API_SECRET` stays on the server. Authorized users receive a short-lived signed URL from the backend. Files are uploaded as Cloudinary private assets.
+
+If Cloudinary upload fails, no attachment metadata record is created.
+
+## Attachment metadata (MongoDB)
+
+```text
+originalName
+fileType
+mimeType
+fileSize
+cloudinaryPublicId
+resourceType
+uploadedBy
+uploadedAt
+ticketId
+documentRequestId (optional)
+```
+
+## Document requests
+
+A ticket may have many document requests.
+
+```text
+ticket
+documentName
+message
+requestedBy
+status
+submissions/history
+timestamps
+```
+
+Statuses:
+
+```text
+PENDING
+SUBMITTED
+ACCEPTED
+REJECTED
+CANCELLED
+```
+
+Students upload against a specific request. Upload is allowed when the request is `PENDING` or `REJECTED`. The request then becomes `SUBMITTED`. The ticket is not marked `RESOLVED`.
+
+Rejecting a submission requires a reason. The rejected file remains in history. The student can upload again.
+
+## Permissions
+
+```text
+STUDENT
+  own tickets only
+  view own document requests
+  upload requested documents
+  cannot create, accept, reject, or cancel requests
+  cannot access another student's documents
+
+STAFF
+  request / view / accept / reject documents for tickets in their department
+
+DEPARTMENT_ADMIN
+  request / view / accept / reject documents for tickets in their department
+
+ADMIN
+  request / view / accept / reject documents across authorized tickets
+```
+
+User id, role, department, ownership, file type, and file size are taken from the authenticated user and the uploaded file, not from client-supplied identity fields.
+
+## APIs
+
+```text
+POST   /api/tickets
+       Optional multipart file on student ticket create. Priority remains MEDIUM.
+
+POST   /api/tickets/:id/attachments
+       Student owner uploads a supporting attachment.
+
+GET    /api/tickets/:id/attachments/:attachmentId
+       Authorized signed access to an attachment.
+
+GET    /api/tickets/:id/document-requests
+       List document requests for an authorized ticket.
+
+POST   /api/tickets/:id/document-requests
+       Staff / Department Admin / Admin create a request.
+       Ticket becomes PENDING_STUDENT_ACTION. SLA pauses.
+
+POST   /api/tickets/:id/document-requests/:requestId/submit
+       Student submits a file for that request. Status SUBMITTED.
+
+PATCH  /api/tickets/:id/document-requests/:requestId/accept
+       SUBMITTED → ACCEPTED
+
+PATCH  /api/tickets/:id/document-requests/:requestId/reject
+       SUBMITTED → REJECTED. Reason required. Student may upload again.
+
+PATCH  /api/tickets/:id/document-requests/:requestId/cancel
+       PENDING or REJECTED → CANCELLED
+```
+
+`GET /api/tickets/:id` also returns `attachments`, `documentRequests`, and `auditHistory`.
+
+## SLA pause / resume
+
+Existing ticket fields are reused:
+
+```text
+slaPausedAt
+totalPausedDuration
+effective deadline = slaDeadline + totalPausedDuration
+```
+
+When a required request is waiting (`PENDING` or `REJECTED`):
+
+```text
+status = PENDING_STUDENT_ACTION
+SLA paused
+breach checks skip paused tickets
+```
+
+When the student submits the last waiting request:
+
+```text
+status = IN_PROGRESS
+paused duration is added to totalPausedDuration
+SLA resumes with remaining time preserved
+```
+
+If another request is still waiting, the ticket stays `PENDING_STUDENT_ACTION` and SLA stays paused.

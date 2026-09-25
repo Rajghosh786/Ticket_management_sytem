@@ -31,6 +31,11 @@ export async function processSlaBreachForTicketId(ticketId, requestUserId) {
         return;
     }
 
+    // Waiting on the student does not consume SLA time.
+    if (ticket.status === "PENDING_STUDENT_ACTION" || ticket.slaPausedAt) {
+        return;
+    }
+
     const now = Date.now();
     const effectiveDeadlineMs = getEffectiveSlaDeadlineMs(ticket);
 
